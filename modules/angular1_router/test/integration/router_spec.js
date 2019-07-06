@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 'use strict';
 
 describe('router', function () {
@@ -60,7 +68,7 @@ describe('router', function () {
       expect(homeElement.text()).toBe('Home');
       expect(homeElement.isolateScope().$ctrl.$router).toBeDefined();
       expect(router).toBeDefined();
-    })
+    });
   });
 
   it('should work when an async route is provided route data', function() {
@@ -118,7 +126,7 @@ describe('router', function () {
       var homeElement = elt.find('home-cmp');
       expect(homeElement.text()).toBe('Home');
       expect($routerOnActivate).toHaveBeenCalled();
-    })
+    });
   });
 
   it('should provide the current instruction', function() {

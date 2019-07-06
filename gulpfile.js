@@ -1,67 +1,59 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 'use strict';
 
 // THIS CHECK SHOULD BE THE FIRST THING IN THIS FILE
 // This is to ensure that we catch env issues before we error while requiring other dependencies.
-require('./tools/check-environment')(
-    {requiredNpmVersion: '>=3.5.3 <4.0.0', requiredNodeVersion: '>=5.4.1 <6.0.0'});
-
+const engines = require('./package.json').engines;
+require('./tools/check-environment')({
+  requiredNodeVersion: engines.node,
+  requiredNpmVersion: engines.npm,
+  requiredYarnVersion: engines.yarn
+});
 
 const gulp = require('gulp');
-const path = require('path');
 
-const srcsToFmt = ['tools/**/*.ts'];
-
-gulp.task('format:enforce', () => {
-  const format = require('gulp-clang-format');
-  const clangFormat = require('clang-format');
-  return gulp.src(srcsToFmt).pipe(
-    format.checkFormat('file', clangFormat, {verbose: true, fail: true}));
-});
-
-gulp.task('format', () => {
-  const format = require('gulp-clang-format');
-  const clangFormat = require('clang-format');
-  return gulp.src(srcsToFmt, { base: '.' }).pipe(
-    format.format('file', clangFormat)).pipe(gulp.dest('.'));
-});
-
-gulp.task('lint', ['format:enforce', 'tools:build'], () => {
-  const tslint = require('gulp-tslint');
-  // Built-in rules are at
-  // https://github.com/palantir/tslint#supported-rules
-  const tslintConfig = require('./tslint.json');
-  return gulp.src(['modules/@angular/**/*.ts', '!modules/@angular/*/test/**'])
-    .pipe(tslint({
-      tslint: require('tslint').default,
-      configuration: tslintConfig,
-      rulesDirectory: 'dist/tools/tslint'
-    }))
-    .pipe(tslint.report('prose', {emitError: true}));
-});
-
-gulp.task('tools:build', (done) => { tsc('tools/', done); });
-
-
-gulp.task('serve', () => {
-  let connect = require('gulp-connect');
-  let cors = require('cors');
-
-  connect.server({
-    root: `${__dirname}/dist`,
-    port: 8000,
-    livereload: false,
-    open: false,
-    middleware: (connect, opt) => [cors()]
-  });
-});
-
-
-function tsc(projectPath, done) {
-  let child_process = require('child_process');
-
-  child_process
-      .spawn(
-          `${__dirname}/node_modules/.bin/tsc`, ['-p', path.join(__dirname, projectPath)],
-          {stdio: 'inherit'})
-      .on('close', (errorCode) => done(errorCode));
+// See `tools/gulp-tasks/README.md` for information about task loading.
+function loadTask(fileName, taskName) {
+  const taskModule = require('./tools/gulp-tasks/' + fileName);
+  const task = taskName ? taskModule[taskName] : taskModule;
+  return task(gulp);
 }
+
+// Check source code for formatting errors in all source files.
+gulp.task('format:enforce', loadTask('format', 'enforce'));
+
+// Format all source files.
+gulp.task('format:all', loadTask('format', 'format'));
+
+// Format only untracked source code files.
+gulp.task('format:untracked', loadTask('format', 'format-untracked'));
+
+// Format only the changed, tracked source code files.
+gulp.task('format:diff', loadTask('format', 'format-diff'));
+
+// Format only changed lines based on the diff from the provided --branch
+// argument (or `master` by default).
+gulp.task('format:changed', ['format:untracked', 'format:diff']);
+
+// Alias for `format:changed` that formerly formatted all files.
+gulp.task('format', ['format:changed']);
+
+gulp.task('lint', ['format:enforce', 'validate-commit-messages', 'tslint']);
+gulp.task('tslint', ['tools:build'], loadTask('lint'));
+gulp.task('validate-commit-messages', loadTask('validate-commit-message'));
+gulp.task('source-map-test', loadTask('source-map-test'));
+gulp.task('tools:build', loadTask('tools-build'));
+gulp.task('check-cycle', loadTask('check-cycle'));
+gulp.task('serve', loadTask('serve', 'default'));
+gulp.task('changelog', loadTask('changelog'));
+gulp.task('check-env', () => {/* this is a noop because the env test ran already above */});
+gulp.task('cldr:extract', loadTask('cldr', 'extract'));
+gulp.task('cldr:download', loadTask('cldr', 'download'));
+gulp.task('cldr:gen-closure-locale', loadTask('cldr', 'closure'));

@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 'use strict';
 
 describe('Navigation lifecycle', function () {
@@ -24,11 +32,11 @@ describe('Navigation lifecycle', function () {
 
     registerComponent('oneCmp', {
       template: '<div>{{oneCmp.number}}</div>',
-      controller: function () {this.number = 'one'}
+      controller: function () {this.number = 'one';}
     });
     registerComponent('twoCmp', {
       template: '<div><a ng-link="[\'/Two\']">{{twoCmp.number}}</a></div>',
-      controller: function () {this.number = 'two'}
+      controller: function () {this.number = 'two';}
     });
   });
 
